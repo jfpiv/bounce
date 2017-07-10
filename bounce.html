@@ -1,0 +1,183 @@
+﻿<!DOCTYPE html>
+
+<!--
+MIT License
+
+Copyright (c) 2017 John Pettenger
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>John's Bouncing Ball</title>
+
+    <script>
+        (function(bounce, $, undefined){
+            var x;
+            var y;
+            var radius;
+            var ppsX; // x pixels per second
+            var ppsY; // y pixels per second
+            var padding;
+            var pi2;
+            var previousTimeMilis;
+            var tickMilis;
+            var bounceCount;
+            var isBouncingX;
+            var isBouncingY;
+
+            bounce.init = function(){
+                x = 300;
+                y = 150;
+                radius = 75;
+                ppsX = 300;
+                ppsY = 300;
+                padding = 0;
+                pi2 = Math.PI * 2;
+                tickMilis = 10;
+                bounceCount = 0;
+                isBouncingX = false;
+                isBouncingY = false;
+                previousTimeMilis = new Date().getTime();
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                draw();
+            }
+
+            bounce.fitCanvasToWindow = function() {
+                var canvas = document.getElementById('canvas');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+
+            function cleft() {
+                return x - radius;
+            }
+
+            function cright() {
+                return x + radius;
+            }
+
+            function ctop() {
+                return y - radius;
+            }
+
+            function cbottom() {
+                return y + radius;
+            }
+
+            function draw() {
+                var context = document.getElementById('canvas').getContext('2d');
+
+                // Calculate the new position for the ball.
+                calculateBallPosition()
+
+                // Update bounce count
+                document.getElementById('bounceCount').innerText = bounceCount.toString();
+
+                // Draw the ball
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.fillStyle = 'darkred';
+                context.beginPath();
+                context.arc(x, y, radius, 0, pi2);
+                context.closePath();
+                context.fill();
+                window.requestAnimationFrame(draw);
+
+                // Set the previous time.
+                previousTimeMilis = new Date().getTime();
+            }
+
+            function calculateBallPosition() {
+                var currentTimeMilis = new Date().getTime();
+                var timeChangeMilis = currentTimeMilis - previousTimeMilis;
+                var timeChangeSec = timeChangeMilis / 1000.0;
+
+                for (var timeMilis = previousTimeMilis; timeMilis < currentTimeMilis + tickMilis; timeMilis += tickMilis) {
+                    let adjustedTickMilis = tickMilis;
+                    if (timeMilis > currentTimeMilis) {
+                        adjustedTickMilis = currentTimeMilis - timeMilis;
+                        timeMilis = currentTimeMilis;
+                    }
+                    // determine whether or not to change direction.
+                    if (cleft() <= padding) {
+                        ppsX = Math.abs(ppsX);
+                        if(!isBouncingX) ++bounceCount;
+                        isBouncingX = true;
+                    } else if (cright() >= canvas.width - padding) {
+                        ppsX = -Math.abs(ppsX);
+                        if (!isBouncingX) ++bounceCount;
+                        isBouncingX = true;
+                    } else {
+                        isBouncingX = false;
+                    }
+                    if (ctop() <= padding) {
+                        ppsY = Math.abs(ppsY);
+                        if (!isBouncingY) ++bounceCount;
+                        isBouncingY = true;
+                    } else if (cbottom() >= canvas.height - padding) {
+                        ppsY = -Math.abs(ppsY);
+                        if (!isBouncingY) ++bounceCount;
+                        isBouncingY = true;
+                    } else {
+                        isBouncingY = false;
+                    }
+
+                    x += ppsX * adjustedTickMilis / 1000.0;
+                    y += ppsY * adjustedTickMilis / 1000.0;
+                }
+            }
+        })(window.bounce = window.bounce || {});
+
+        window.onload = bounce.init;
+        window.onresize = bounce.fitCanvasToWindow;
+    </script>
+
+    <style>
+        html, body {
+            width:  100%;
+            height: 100%;
+            margin: 0px;
+            overflow: hidden;
+            display: block;
+            background: black;
+        }
+        #canvas{
+            background: black;
+        }
+        #bounceCountWrapper{
+            position:absolute;
+            right: 0;
+            top: 0;
+            margin: 1rem;
+            font-size: 2rem;
+            z-index: 9001;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <canvas id='canvas'></canvas>
+    <div id='bounceCountWrapper'>
+        <strong>Bounce count: <span id="bounceCount">0</span></strong>
+    </div>
+</body>
+</html>
